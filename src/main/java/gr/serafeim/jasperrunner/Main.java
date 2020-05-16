@@ -16,10 +16,7 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class Main {
@@ -40,19 +37,79 @@ public class Main {
         return props;
     }
 
-    public static void createReport(Connection conn, String reportFile, Map<String, Object> parameters, int idx ) throws FileNotFoundException, JRException {
+    public static String getParameterString(Map<String, Object> params) {
+        StringBuilder sb = new StringBuilder();
+        Set<String> keys = params.keySet();
+        for(String key: keys) {
+            Object value = params.get(key);
+            sb.append(value.toString());
+        }
+        String result = sb.toString();
+        return result;
+    }
+
+    public static void createReport(Connection conn, String reportFile, Map<String, Object> parameters) throws FileNotFoundException, JRException {
         InputStream reportStream = new FileInputStream(reportFile);
+        String pstring = getParameterString(parameters);
 
         JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
         //JRSaver.saveObject(jasperReport, "SHIPREG_epistolh.jasper");
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, conn);
 
         JRDocxExporter exporter = new JRDocxExporter();
-
         exporter.setParameter(JRExporterParameter.JASPER_PRINT, jasperPrint);
-        exporter.setParameter(JRExporterParameter.OUTPUT_FILE_NAME, "report_"+idx+".docx");
+        String filename = "report_"+pstring+".docx";
+        exporter.setParameter(JRExporterParameter.OUTPUT_FILE_NAME, filename);
 
         exporter.exportReport();
+        logger.info("Report " + filename +" created!");
+
+        /*** HOW TO USE for jasperreport latest versions ***
+
+         /* DOCX
+         SimpleDocxReportConfiguration reportConfig = new SimpleDocxReportConfiguration();
+
+         exporter.setConfiguration(reportConfig);
+         reportConfig.setFramesAsNestedTables(false);
+         reportConfig.setFlexibleRowHeight(false);
+         //reportConfig.setNewLineAsParagraph(false);
+         reportConfig.setIgnoreHyperlink(true);
+         exporter.setExporterInput(new SimpleExporterInput(jasperPrint));
+         exporter.setExporterOutput(new SimpleOutputStreamExporterOutput("test.docx"));
+         exporter.exportReport();
+
+         */
+
+        /** XLSX
+
+         JRXlsxExporter exporter = new JRXlsxExporter();
+         SimpleXlsxReportConfiguration reportConfig = new SimpleXlsxReportConfiguration();
+         reportConfig.setSheetNames(new String[] { "Employee Data" });
+         exporter.setConfiguration(reportConfig);
+         exporter.setExporterInput(new SimpleExporterInput(jasperPrint));
+         exporter.setExporterOutput(new SimpleOutputStreamExporterOutput("test.xlsx"));
+         exporter.exportReport();
+         */
+        /** PDF
+         JRPdfExporter exporter = new JRPdfExporter();
+
+         exporter.setExporterInput(new SimpleExporterInput(jasperPrint));
+         exporter.setExporterOutput(new SimpleOutputStreamExporterOutput("employeeReport.pdf"));
+
+         SimplePdfReportConfiguration reportConfig  = new SimplePdfReportConfiguration();
+         reportConfig.setSizePageToContent(true);
+         reportConfig.setForceLineBreakPolicy(false);
+
+         SimplePdfExporterConfiguration exportConfig = new SimplePdfExporterConfiguration();
+         exportConfig.setMetadataAuthor("baeldung");
+         exportConfig.setEncrypted(true);
+
+         exportConfig.setAllowedPermissionsHint("PRINTING");
+
+         exporter.setConfiguration(reportConfig);
+         exporter.setConfiguration(exportConfig);
+         exporter.exportReport();
+         */
 
     }
 
@@ -90,59 +147,9 @@ public class Main {
                 JSONObject jo = jarr.getJSONObject(i);
                 Map<String, Object> parameters = toMap(jo);
                 logger.info("Creating report for " +jo.toString() );
-                createReport(conn, reportFile, parameters, i);
+                createReport(conn, reportFile, parameters);
             }
-
-            /*** HOW TO USE for jasperreport latest versions ***
-
-            /* DOCX
-            SimpleDocxReportConfiguration reportConfig = new SimpleDocxReportConfiguration();
-
-            exporter.setConfiguration(reportConfig);
-            reportConfig.setFramesAsNestedTables(false);
-            reportConfig.setFlexibleRowHeight(false);
-            //reportConfig.setNewLineAsParagraph(false);
-            reportConfig.setIgnoreHyperlink(true);
-            exporter.setExporterInput(new SimpleExporterInput(jasperPrint));
-            exporter.setExporterOutput(new SimpleOutputStreamExporterOutput("test.docx"));
-            exporter.exportReport();
-
-             */
-
-            /** XLSX
-
-            JRXlsxExporter exporter = new JRXlsxExporter();
-            SimpleXlsxReportConfiguration reportConfig = new SimpleXlsxReportConfiguration();
-            reportConfig.setSheetNames(new String[] { "Employee Data" });
-            exporter.setConfiguration(reportConfig);
-            exporter.setExporterInput(new SimpleExporterInput(jasperPrint));
-            exporter.setExporterOutput(new SimpleOutputStreamExporterOutput("test.xlsx"));
-            exporter.exportReport();
-             */
-            /** PDF
-            JRPdfExporter exporter = new JRPdfExporter();
-
-            exporter.setExporterInput(new SimpleExporterInput(jasperPrint));
-            exporter.setExporterOutput(new SimpleOutputStreamExporterOutput("employeeReport.pdf"));
-
-            SimplePdfReportConfiguration reportConfig  = new SimplePdfReportConfiguration();
-            reportConfig.setSizePageToContent(true);
-            reportConfig.setForceLineBreakPolicy(false);
-
-            SimplePdfExporterConfiguration exportConfig = new SimplePdfExporterConfiguration();
-            exportConfig.setMetadataAuthor("baeldung");
-            exportConfig.setEncrypted(true);
-
-            exportConfig.setAllowedPermissionsHint("PRINTING");
-
-            exporter.setConfiguration(reportConfig);
-            exporter.setConfiguration(exportConfig);
-            exporter.exportReport();
-             */
-
             conn.close();
-
-
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (JRException e) {
