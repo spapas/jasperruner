@@ -37,6 +37,22 @@ public class Main {
         return props;
     }
 
+    public static void createReport(Connection conn, String reportFile, Map<String, Object> parameters) throws FileNotFoundException, JRException {
+        InputStream reportStream = new FileInputStream(reportFile);
+
+        JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
+        //JRSaver.saveObject(jasperReport, "SHIPREG_epistolh.jasper");
+        JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, conn);
+
+        JRDocxExporter exporter = new JRDocxExporter();
+
+        exporter.setParameter(JRExporterParameter.JASPER_PRINT, jasperPrint);
+        exporter.setParameter(JRExporterParameter.OUTPUT_FILE_NAME, "report.docx");
+
+        exporter.exportReport();
+
+    }
+
     public static void main(String[] args) {
 	    System.out.print("Starting...");
 
@@ -48,27 +64,15 @@ public class Main {
             String dbPassword= props.getProperty("db.password");
             String reportFile = props.getProperty("report.file");
 
-            InputStream reportStream = new FileInputStream(reportFile);
-            JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
-            //JRSaver.saveObject(jasperReport, "SHIPREG_epistolh.jasper");
-
             Map<String, Object> parameters = new HashMap<>();
-            parameters.put("title", "Employee Report");
+            parameters.put("folder", 470);
 
             Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
             logger.info("Connected to db");
 
-            JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, null, conn);
+            createReport(conn, reportFile, parameters );
 
-            JRDocxExporter exporter = new JRDocxExporter();
-
-            exporter.setParameter(JRExporterParameter.JASPER_PRINT, jasperPrint);
-            exporter.setParameter(JRExporterParameter.OUTPUT_FILE_NAME, "koko.docx");
-            System.out.print("2");
-            //JRDocxExporter exporter = new JRDocxExporter();
-
-            exporter.exportReport();
-            System.out.print("3");
+            /*** HOW TO USE for jasperreport latest versions ***
 
             /* DOCX
             SimpleDocxReportConfiguration reportConfig = new SimpleDocxReportConfiguration();
@@ -116,7 +120,7 @@ public class Main {
              */
 
             conn.close();
-            System.out.print("4");
+
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();

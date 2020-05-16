@@ -8,7 +8,9 @@
     <artifactId>JasperRunner</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
 
     <dependencies>
         <!-- https://mvnrepository.com/artifact/net.sf.jasperreports/jasperreports -->
@@ -72,7 +74,7 @@
                     <mainClass>gr.serafeim.jasperrunner.Main</mainClass>
                     <cleanupDaemonThreads>false</cleanupDaemonThreads>
                     <arguments>
-                        <argument>argument1</argument>
+                        <argument></argument>
                     </arguments>
                     <systemProperties>
                         <systemProperty>
