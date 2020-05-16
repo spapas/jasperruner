@@ -2,3 +2,4 @@ db.url=
 db.user=
 db.password=
 report.file=
+params.file=
